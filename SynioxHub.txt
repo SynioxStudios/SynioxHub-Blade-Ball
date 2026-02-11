@@ -1,0 +1,71 @@
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SynioxStudios/ByYusufGui-Syniox/refs/heads/main/SynioxGui.txt", true))()
+local displayName = game.Players.LocalPlayer.DisplayName
+
+local window = library:AddWindow("Syniox Public | Blade Ball || HELLO - ".. displayName, {
+    title_bar = {
+        Color3.fromRGB(160, 0, 0), 
+        Color3.fromRGB(40, 0, 0),  
+        Color3.fromRGB(0, 0, 0)    
+    }, 
+    title_bar_transparency = 0.1, 
+    background = {
+        Color3.fromRGB(0, 0, 0), 
+        Color3.fromRGB(10, 10, 10), 
+        Color3.fromRGB(20, 20, 20)
+    }, 
+    background_transparency = 0.1, 
+    main_color = Color3.fromRGB(160, 0, 0), 
+    min_size = Vector2.new(450, 450), 
+    can_resize = true 
+})
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+
+local autoParryEnabled = false
+
+local function getBall()
+    local ballsFolder = workspace:FindFirstChild("Balls")
+    if not ballsFolder then return nil end
+    
+    for _, ball in ipairs(ballsFolder:GetChildren()) do
+        if ball:GetAttribute("target") == localPlayer.Name or ball:GetAttribute("Target") == localPlayer.Name then
+            return ball
+        end
+    end
+    return nil
+end
+
+local function performParry()
+    local remote = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("Parry")
+    if remote then
+        remote:FireServer()
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    if not autoParryEnabled then return end
+    
+    local ball = getBall()
+    if ball and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local charPos = localPlayer.Character.HumanoidRootPart.Position
+        local ballPos = ball.Position
+        local distance = (ballPos - charPos).Magnitude
+        local velocity = ball.Velocity.Magnitude
+        
+        local ping = 0.1 
+        local dynamicThreshold = 10 + (velocity * ping)
+        
+        if distance <= dynamicThreshold then
+            performParry()
+        end
+    end
+end)
+
+local MainTab = window:AddTab("Combat")
+
+MainTab:AddSwitch("Auto Parry", function(state)
+    autoParryEnabled = state
+end)
