@@ -19,6 +19,12 @@ local window = library:AddWindow("Syniox Public | Blade Ball || HELLO - ".. disp
     can_resize = true 
 })
 
+local MainTab = window:AddTab("ComBat")
+
+MainTab:AddToggle("Auto Parry", function(state)
+    autoParryEnabled = state
+end)
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -27,19 +33,18 @@ local localPlayer = Players.LocalPlayer
 local autoParryEnabled = false
 
 local function getBall()
-    local ballsFolder = workspace:FindFirstChild("Balls")
-    if not ballsFolder then return nil end
-    
-    for _, ball in ipairs(ballsFolder:GetChildren()) do
-        if ball:GetAttribute("target") == localPlayer.Name or ball:GetAttribute("Target") == localPlayer.Name then
-            return ball
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj.Name == "realBall" or (obj.Parent and obj.Parent.Name == "Balls") then
+            if obj:GetAttribute("target") == localPlayer.Name or obj:GetAttribute("Target") == localPlayer.Name then
+                return obj
+            end
         end
     end
     return nil
 end
 
 local function performParry()
-    local remote = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("Parry")
+    local remote = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("Block")
     if remote then
         remote:FireServer()
     end
@@ -55,17 +60,13 @@ RunService.Heartbeat:Connect(function()
         local distance = (ballPos - charPos).Magnitude
         local velocity = ball.Velocity.Magnitude
         
-        local ping = 0.1 
-        local dynamicThreshold = 10 + (velocity * ping)
-        
-        if distance <= dynamicThreshold then
-            performParry()
+        if velocity > 0 then
+            local timeToHit = distance / velocity
+            local threshold = 0.12 + (velocity * 0.001) 
+            
+            if timeToHit <= threshold or distance <= 15 then
+                performParry()
+            end
         end
     end
-end)
-
-local MainTab = window:AddTab("Combat")
-
-MainTab:AddSwitch("Auto Parry", function(state)
-    autoParryEnabled = state
 end)
